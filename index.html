@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jurnal Mengajar MTsN 1 Balikpapan</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f0fdf4;
+            color: #333;
+            padding: 20px;
+        }
+        .container {
+            max-width: 650px;
+            margin: 0 auto;
+            background: #ffffff;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 25px;
+            border-bottom: 2px solid #16a34a;
+            padding-bottom: 15px;
+        }
+        .header h2 { margin: 0; color: #166534; font-size: 24px; }
+        .header h3 { margin: 5px 0 0 0; color: #15803d; font-size: 16px; font-weight: normal; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; font-weight: bold; margin-bottom: 5px; color: #166534; }
+        input, select, textarea {
+            width: 100%; padding: 10px; border: 1px solid #ccc;
+            border-radius: 5px; box-sizing: border-box; font-family: inherit;
+        }
+        input:focus, select:focus, textarea:focus {
+            outline: none; border-color: #16a34a; box-shadow: 0 0 5px rgba(22, 163, 74, 0.3);
+        }
+        
+        /* Desain Khusus Form Kehadiran Dinamis */
+        .attendance-row {
+            display: flex; gap: 10px; margin-bottom: 10px; align-items: stretch;
+        }
+        .attendance-row input, .attendance-row select { margin-bottom: 0; }
+        .att-name { flex: 2; }
+        .att-status { flex: 1; }
+        .att-ket { flex: 2; display: none; } /* Sembunyi secara default */
+        
+        .btn-add {
+            background-color: #3b82f6; margin-top: 5px; margin-bottom: 10px;
+        }
+        .btn-add:hover { background-color: #2563eb; }
+        
+        .btn-remove {
+            background-color: #ef4444; color: white; border: none;
+            border-radius: 5px; padding: 0 15px; cursor: pointer; font-weight: bold;
+            width: auto; margin-top: 0;
+        }
+        .btn-remove:hover { background-color: #b91c1c; }
+
+        button {
+            width: 100%; padding: 12px; background-color: #16a34a;
+            color: white; border: none; border-radius: 5px; font-size: 16px;
+            font-weight: bold; cursor: pointer; transition: background-color 0.3s;
+        }
+        button[type="submit"]:hover { background-color: #15803d; }
+        .loading { display: none; text-align: center; margin-top: 15px; color: #15803d; font-weight: bold; }
+
+        /* Responsif untuk HP */
+        @media (max-width: 600px) {
+            .attendance-row {
+                flex-wrap: wrap; background: #f8fafc; padding: 12px;
+                border-radius: 5px; border: 1px solid #e2e8f0;
+            }
+            .att-name, .att-status, .att-ket { flex: 100%; margin-bottom: 8px !important; }
+            .btn-remove { width: 100%; padding: 10px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header">
+        <h2>Jurnal Mengajar MTsN 1 Balikpapan</h2>
+        <h3>Semester Ganjil TA. 2026/2027</h3>
+    </div>
+
+    <form name="jurnal-form" id="jurnalForm">
+        <div class="form-group">
+            <label for="prt">PRT (Pertemuan Ke-)</label>
+            <input type="number" id="prt" name="prt" placeholder="Contoh: 1" required>
+        </div>
+
+        <div class="form-group">
+            <label for="tanggal">Hari/Tanggal</label>
+            <input type="date" id="tanggal" name="tanggal" required>
+        </div>
+
+        <div class="form-group">
+            <label for="jam">Jam Ke-</label>
+            <input type="text" id="jam" name="jam" placeholder="Contoh: 1-2 atau 3" required>
+        </div>
+
+        <div class="form-group">
+            <label for="kelas">Kelas</label>
+            <input type="text" id="kelas" name="kelas" placeholder="Contoh: VII-A" required>
+        </div>
+
+        <div class="form-group">
+            <label for="materi">Materi</label>
+            <textarea id="materi" name="materi" rows="3" placeholder="Masukkan materi yang diajarkan" required></textarea>
+        </div>
+
+        <!-- Bagian Kehadiran Dinamis -->
+        <div class="form-group">
+            <label>Data Kehadiran Siswa</label>
+            <div id="attendance-container">
+                <div class="attendance-row">
+                    <input type="text" class="att-name" placeholder="Nama Siswa (Kosongkan jika Nihil)">
+                    <select class="att-status" onchange="toggleKeterangan(this)">
+                        <option value="NIHIL" selected>NIHIL</option>
+                        <option value="SAKIT">SAKIT</option>
+                        <option value="IZIN">IZIN</option>
+                        <option value="ALFA">ALFA</option>
+                    </select>
+                    <input type="text" class="att-ket" placeholder="Keterangan (contoh: Acara keluarga)">
+                    <button type="button" class="btn-remove" onclick="removeRow(this)" style="display:none;">✖</button>
+                </div>
+            </div>
+            <button type="button" class="btn-add" onclick="addRow()">+ Tambah Siswa Absen</button>
+        </div>
+
+        <div class="form-group">
+            <label for="keterangan_umum">Catatan Jurnal Kelas</label>
+            <textarea id="keterangan_umum" rows="2" placeholder="Catatan tambahan kelas secara umum (opsional)"></textarea>
+        </div>
+
+        <!-- Input Tersembunyi (Akan diisi otomatis lalu dikirim ke Google Sheets) -->
+        <input type="hidden" name="kehadiran" id="kehadiran_final">
+        <input type="hidden" name="keterangan" id="keterangan_final">
+
+        <button type="submit" id="btnSubmit">Kirim Jurnal</button>
+        <div class="loading" id="loadingText">Mengirim data... Mohon tunggu.</div>
+    </form>
+</div>
+
+<script>
+    // Link web app Google Script Anda yang BARU sudah terpasang di sini:
+    const scriptURL = 'https://script.google.com/macros/s/AKfycbx0OPK8Iol7DsG_qs4OvUGacXzV92Utmadv68zv_qKQOe5fzCkARlbZWK0vSml_AI2K/exec';
+    
+    function toggleKeterangan(selectEl) {
+        const row = selectEl.closest('.attendance-row');
+        const ketInput = row.querySelector('.att-ket');
+        if (selectEl.value === 'NIHIL') {
+            ketInput.style.display = 'none';
+            ketInput.value = ''; 
+        } else {
+            ketInput.style.display = 'block';
+        }
+    }
+
+    function addRow() {
+        const container = document.getElementById('attendance-container');
+        const firstRow = container.querySelector('.attendance-row');
+        const newRow = firstRow.cloneNode(true);
+        
+        newRow.querySelector('.att-name').value = '';
+        newRow.querySelector('.att-status').value = 'NIHIL';
+        newRow.querySelector('.att-ket').value = '';
+        newRow.querySelector('.att-ket').style.display = 'none';
+        newRow.querySelector('.btn-remove').style.display = 'block';
+        
+        container.appendChild(newRow);
+    }
+
+    function removeRow(btnEl) {
+        btnEl.closest('.attendance-row').remove();
+    }
+
+    const form = document.forms['jurnal-form'];
+    const btnSubmit = document.getElementById('btnSubmit');
+    const loadingText = document.getElementById('loadingText');
+
+    form.addEventListener('submit', e => {
+        e.preventDefault();
+        
+        let kehadiranArr = [];
+        let keteranganArr = [];
+
+        const rows = document.querySelectorAll('.attendance-row');
+        rows.forEach(row => {
+            let name = row.querySelector('.att-name').value.trim();
+            const status = row.querySelector('.att-status').value;
+            const ket = row.querySelector('.att-ket').value.trim();
+
+            if (name !== '') {
+                kehadiranArr.push(`${name} (${status})`);
+                if (status !== 'NIHIL' && ket !== '') {
+                    keteranganArr.push(`${name}: ${ket}`);
+                }
+            } else if (status !== 'NIHIL') {
+                 kehadiranArr.push(`Tanpa Nama (${status})`);
+                 if (ket !== '') keteranganArr.push(`Tanpa Nama: ${ket}`);
+            }
+        });
+
+        const ketUmum = document.getElementById('keterangan_umum').value.trim();
+        if (ketUmum !== '') {
+            keteranganArr.push(`Catatan: ${ketUmum}`);
+        }
+
+        const inputKehadiran = document.getElementById('kehadiran_final');
+        const inputKeterangan = document.getElementById('keterangan_final');
+
+        inputKehadiran.value = kehadiranArr.length === 0 ? "NIHIL" : kehadiranArr.join('\n');
+        inputKeterangan.value = keteranganArr.length === 0 ? "-" : keteranganArr.join('\n');
+
+        btnSubmit.style.display = 'none';
+        loadingText.style.display = 'block';
+
+        fetch(scriptURL, { method: 'POST', body: new FormData(form)})
+            .then(response => {
+                alert('Berhasil! Data jurnal berhasil disimpan ke Google Sheets.');
+                form.reset(); 
+                
+                const container = document.getElementById('attendance-container');
+                while (container.children.length > 1) {
+                    container.removeChild(container.lastChild);
+                }
+                container.querySelector('.att-ket').style.display = 'none';
+
+                btnSubmit.style.display = 'block';
+                loadingText.style.display = 'none';
+            })
+            .catch(error => {
+                console.error('Error!', error.message);
+                alert('Terjadi kesalahan saat mengirim data.');
+                btnSubmit.style.display = 'block';
+                loadingText.style.display = 'none';
+            });
+    });
+</script>
+
+</body>
+</html>
